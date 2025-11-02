@@ -1,33 +1,44 @@
 "use client"
-import {useState} from "react"
+import { useState, useEffect } from "react"
 import {useRouter} from "next/navigation"
-import useAuth from "../../utils/useAuth"
+import useAuth from "../../../utils/useAuth"
 
-const CreateItem = () => {
+const UpdateItem = (context) => {
   const [title, setTitle] = useState("")
   const [price, setPrice] = useState("")
   const [image, setImage] = useState("")
   const [description, setDescription] = useState("")
+  const [email, setEmail] = useState("")
 
   const router = useRouter()
   const loginUserEmail = useAuth()
 
+  useEffect(() => {
+    const getSingleItem = async() => {
+      const params = await context.params
+      const response = await fetch(`http://localhost:3000/api/item/readsingle/${params.id}`)
+      const jsonData = await response.json()
+      const singleItem = jsonData.singleItem
+      setTitle(singleItem.title)
+      setPrice(singleItem.price)
+      setImage(singleItem.image)
+      setDescription(singleItem.description)
+      setEmail(singleItem.email)
+    }
+    getSingleItem()
+  }, [context])
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    const params = await context.params
 
-    const rawToken = localStorage.getItem("token")
-    if (!rawToken) {
-      alert("トークンがおかしい")
-      return
-    }
-    const token = rawToken.trim().replace(/^"+|"+$/g, "")
     try {
-      const response = await fetch("http://localhost:3000/api/item/create", {
-        method: "POST",
+      const response = await fetch(`http://localhost:3000/api/item/update/${params.id}`, {
+        method: "PUT",
         headers: {
           "Accept": "application/json",
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
         },
         body: JSON.stringify({
           title: title,
@@ -41,14 +52,14 @@ const CreateItem = () => {
       alert(jsonData.message)
       router.push("/")
     } catch {
-      alert("アイテム作成失敗")
+      alert("アイテム編集失敗")
     }
   }
 
-  if (loginUserEmail) {
+  if (loginUserEmail === email) {
     return (
       <div>
-        <h1 className="page-title">アイテム作成</h1>
+        <h1 className="page-title">アイテム編集</h1>
         <form onSubmit={handleSubmit}>
           <input value={title} onChange={(e) => setTitle(e.target.value)} type="text" name="title"
                  placeholder="アイテム名" required/>
@@ -58,11 +69,14 @@ const CreateItem = () => {
                  required/>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} name="description" rows={15}
                     placeholder="商品説明" required></textarea>
-          <button>作成</button>
+          <button>編集</button>
         </form>
       </div>
     )
+  } else {
+    return <h1>権限がありません</h1>
   }
+
 }
 
-export default CreateItem
+export default UpdateItem
