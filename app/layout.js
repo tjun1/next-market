@@ -15,3 +15,7 @@ const RootLayout = ({ children }) => {
 }
 
 export default RootLayout
+
+export const metadata = {
+      generator: 'v0.app'
+    };
